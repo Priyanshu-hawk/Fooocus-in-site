@@ -95,13 +95,13 @@ def is_colab():
         return False
 
 def bck_end_server_start_msg(ip_addr):
-    MSG = f":orange_circle: Image Gen Server Started at {datetime.now()}"
+    MSG = f":orange_circle: Image Gen Server Started at {datetime.datetime.now()}"
     MSG += f"\nServer IP: {ip_addr}"
     requests.post(os.getenv("IMAGE_GEN_SERVER_NORTIFICATION_URL"), json={"content": MSG,
                                                        "username": "Gradio Image Gen Server State"})
 
 def bck_end_server_stop_msg(ip_addr):
-    MSG = f":yellow_circle: Image gen Server Stopped at {datetime.now()}"
+    MSG = f":yellow_circle: Image gen Server Stopped at {datetime.datetime.now()}"
     MSG += f"\nServer IP: {ip_addr}"
     requests.post(os.getenv("IMAGE_GEN_SERVER_NORTIFICATION_URL"), json={"content": MSG,
                                                        "username": "Gradio Image Gen Server State"})
@@ -109,7 +109,7 @@ def bck_end_server_stop_msg(ip_addr):
 def register_gradio_ip(MainDB_aidub, remote_ip):
     backend_data = {
         "ip_ep": remote_ip,
-        "time": str(datetime.now()),
+        "time": str(datetime.datetime.now()),
         "status": 1,
         "type": "server" if is_colab() else "local",
         "busy": 0,

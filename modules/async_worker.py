@@ -201,7 +201,7 @@ def worker():
     from modules.flags import Performance
     from modules.meta_parser import get_metadata_parser
     from modules.util import mongo_db_connection
-    from modules.config import register_gradio_ip
+    from modules.util import register_gradio_ip
     
     from dotenv import load_dotenv
     load_dotenv()

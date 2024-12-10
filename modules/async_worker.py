@@ -200,12 +200,19 @@ def worker():
     from modules.upscaler import perform_upscale
     from modules.flags import Performance
     from modules.meta_parser import get_metadata_parser
+    from modules.util import mongo_db_connection
+    from modules.config import register_gradio_ip
+    
+    from dotenv import load_dotenv
+    load_dotenv()
+    MainDB_aidub = mongo_db_connection(os.getenv("MONGO_DUB_DATABASE"))
 
     pid = os.getpid()
     print(f'Started worker with PID {pid}')
 
     try:
         async_gradio_app = shared.gradio_root
+        register_gradio_ip(MainDB_aidub, async_gradio_app.share_url)
         flag = f'''App started successful. Use the app with {str(async_gradio_app.local_url)} or {str(async_gradio_app.server_name)}:{str(async_gradio_app.server_port)}'''
         if async_gradio_app.share:
             flag += f''' or {async_gradio_app.share_url}'''

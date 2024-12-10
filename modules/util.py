@@ -17,6 +17,13 @@ from PIL import Image
 import modules.config
 import modules.sdxl_styles
 from modules.flags import Performance
+from pymongo.mongo_client import MongoClient
+from bson import ObjectId
+import certifi
+import requests
+
+from dotenv import load_dotenv
+load_dotenv()
 
 LANCZOS = (Image.Resampling.LANCZOS if hasattr(Image, 'Resampling') else Image.LANCZOS)
 
@@ -26,6 +33,91 @@ LANCZOS = (Image.Resampling.LANCZOS if hasattr(Image, 'Resampling') else Image.L
 LORAS_PROMPT_PATTERN = re.compile(r"(<lora:([^:]+):([+-]?(?:\d+(?:\.\d*)?|\.\d+))>)", re.X)
 
 HASH_SHA256_LENGTH = 10
+
+class mongo_db_connection():
+    def __init__(self, db_name):
+        self.uri = os.getenv("MONGO_URI")
+        self.ca = certifi.where()
+        self.client = MongoClient(self.uri, tlsCAFile=self.ca)
+        try:
+            self.client.admin.command('ping')
+            print("Pinged your deployment. You successfully connected to MongoDB!")
+        except Exception as e:
+            print(e)
+
+        self.db = self.client[db_name]
+
+    def insert_one(self, collection_name, item):
+        collection = self.db[collection_name]
+        mongo_id = collection.insert_one(item)
+        return mongo_id.inserted_id
+    
+    def get_all(self, collection_name):
+        collection = self.db[collection_name]
+        all_items = collection.find()
+        return all_items
+
+    def delete_item(self, collection_name, item):
+        collection = self.db[collection_name]
+        collection.delete_one(item)
+
+    def find_one_by_uiqu_id(self, collection_name, id):
+        all_items = self.get_all(collection_name)
+        for item in all_items:
+            if id in item:
+                return item
+        return None
+    
+    def find_one_by_key_value(self, collection_name, key, value):
+        collection = self.db[collection_name]
+        return collection.find_one({key: value})
+
+    def find_one_by_mongo_id(self, collection_name, mongo_id):
+        collection = self.db[collection_name]
+        return collection.find_one({"_id": ObjectId(mongo_id)})
+
+    def is_uiqu_id_exist(self, collection_name, id):
+        all_items = self.get_all(collection_name)
+        for item in all_items:
+            if id in item:
+                return True
+        return False
+    
+    def update_by_mongo_id(self, collection_name, mongo_id, new_json):
+        collection = self.db[collection_name]
+        collection.update_one({"_id": mongo_id}, {"$set": new_json})
+
+def is_colab():
+    try:
+        import google.colab
+        return True
+    except:
+        return False
+
+def bck_end_server_start_msg(ip_addr):
+    MSG = f":orange_circle: Image Gen Server Started at {datetime.now()}"
+    MSG += f"\nServer IP: {ip_addr}"
+    requests.post(os.getenv("IMAGE_GEN_SERVER_NORTIFICATION_URL"), json={"content": MSG,
+                                                       "username": "Gradio Image Gen Server State"})
+
+def bck_end_server_stop_msg(ip_addr):
+    MSG = f":yellow_circle: Image gen Server Stopped at {datetime.now()}"
+    MSG += f"\nServer IP: {ip_addr}"
+    requests.post(os.getenv("IMAGE_GEN_SERVER_NORTIFICATION_URL"), json={"content": MSG,
+                                                       "username": "Gradio Image Gen Server State"})
+
+def register_gradio_ip(MainDB_aidub, remote_ip):
+    backend_data = {
+        "ip_ep": remote_ip,
+        "time": str(datetime.now()),
+        "status": 1,
+        "type": "server" if is_colab() else "local",
+        "busy": 0,
+    }
+    print(backend_data["ip_ep"])
+    bck_end_server_start_msg(backend_data["ip_ep"])
+    remote_ip_obj = MainDB_aidub.insert_one("image_gen_server", backend_data)
+    return remote_ip_obj
 
 
 def erode_or_dilate(x, k):

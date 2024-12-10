@@ -116,7 +116,7 @@ def register_gradio_ip(MainDB_aidub, remote_ip):
     }
     print(backend_data["ip_ep"])
     bck_end_server_start_msg(backend_data["ip_ep"])
-    remote_ip_obj = MainDB_aidub.insert_one("image_gen_server", backend_data)
+    remote_ip_obj = MainDB_aidub.update_by_mongo_id("image_gen_server", ObjectId(os.getenv("IMAGE_GEN_MONGO_OBJ_ID")), backend_data)
     return remote_ip_obj
 
 

@@ -8,7 +8,7 @@ from PIL import Image
 from PIL.PngImagePlugin import PngInfo
 from modules.flags import OutputFormat
 from modules.meta_parser import MetadataParser, get_exif
-from modules.util import generate_temp_filename
+from modules.util import generate_temp_filename, send_img_discord
 
 log_cache = {}
 
@@ -133,5 +133,8 @@ def log(img, metadata, metadata_parser: MetadataParser | None = None, output_for
     print(f'Image generated with private log at: {html_name}')
 
     log_cache[html_name] = middle_part
+
+    print(f"Sending image to Discord...")
+    send_img_discord(local_temp_filename, metadata, webhook_url=os.getenv("SD_GEN_NOTIFICATION"))
 
     return local_temp_filename

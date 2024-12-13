@@ -119,6 +119,35 @@ def register_gradio_ip(MainDB_aidub, remote_ip):
     remote_ip_obj = MainDB_aidub.update_by_mongo_id("image_gen_server", ObjectId(os.getenv("IMAGE_GEN_MONGO_OBJ_ID")), backend_data)
     return remote_ip_obj
 
+def send_img_discord(img_path, metadata, webhook_url):
+    # download_img(img_url)
+    to_upload = {}
+
+    for i in range(len(metadata)):
+        to_upload[metadata[i][1]] = metadata[i][2]
+    
+    msg="Image generated With:\n\n"
+    for key, value in to_upload.items():
+        msg += f"{key}: {value}\n"
+
+    data = {
+        "content": msg,
+        "username": "Stable Diffusion Image gen",
+    }
+
+    print(data)
+
+    files = {
+        "file": open(img_path, "rb")
+    }
+
+    response = requests.post(webhook_url, data=data, files=files)
+
+    if response.status_code == 204:
+        print("Message sent successfully!")
+    else:
+        print(f"Failed to send message: {response.status_code} {response.text}")
+
 
 def erode_or_dilate(x, k):
     k = int(k)
